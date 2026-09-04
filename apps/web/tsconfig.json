@@ -20,7 +20,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@spotify-clone/shared": ["../../packages/shared/src/index.ts"]
     }
   },
   "include": [
