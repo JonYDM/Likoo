@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+
 export async function GET(request: NextRequest) {
   const refreshToken = request.cookies.get("sp_refresh_token")?.value
 
@@ -6,7 +7,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 })
   }
 
-    const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
+  const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
 
   const tokens = await tokenRes.json()
 
-    const response = NextResponse.json({
+  const response = NextResponse.json({
     accessToken: tokens.access_token,
     expiresIn: tokens.expires_in,
   })
@@ -38,6 +39,4 @@ export async function GET(request: NextRequest) {
   }
 
   return response
-
-
 }

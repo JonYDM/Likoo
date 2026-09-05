@@ -1,11 +1,19 @@
 "use client"
 
-import { useEffect } from "react"
+import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useAuth } from "../../../lib/auth-context"
 
-export default function ExchangePage() {
+/**
+ * Contenido real del intercambio. Usa useSearchParams(), que en Next 15/16
+ * obliga a un límite de Suspense en cliente (CSR bailout) — de ahí el wrapper
+ * de abajo. Aquí se valida el `state` contra sessionStorage y se dispara el
+ * intercambio server-side del `code` por tokens.
+ */
+function ExchangeInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { refresh } = useAuth()
 
   useEffect(() => {
     const code = searchParams.get("code")
@@ -29,14 +37,25 @@ export default function ExchangePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code, verifier }),
     })
-      .then((res) => {
+      .then(async (res) => {
         if (!res.ok) throw new Error("token_exchange_failed")
+        // La cookie ya existe: poblamos el token en memoria ANTES de navegar
+        // para que la home no muestre "No autenticado" hasta un reload.
+        await refresh()
         router.replace("/")
       })
       .catch(() => {
         router.replace("/login?error=token_exchange")
       })
-  }, [searchParams, router])
+  }, [searchParams, router, refresh])
 
   return <p>Iniciando sesión...</p>
+}
+
+export default function ExchangePage() {
+  return (
+    <Suspense fallback={<p>Iniciando sesión...</p>}>
+      <ExchangeInner />
+    </Suspense>
+  )
 }

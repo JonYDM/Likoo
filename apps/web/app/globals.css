@@ -1,26 +1,146 @@
 @import "tailwindcss";
 
+/*
+ * DESIGN TOKENS
+ * ─────────────────────────────────────────────────────────────────────────
+ * Dos capas, pensadas para la personalización futura de la UI:
+ *
+ * 1. Paleta CRUDA (--steel-*, --neutral-*): los valores reales de color.
+ *    Es la "marca" base. Rara vez se toca.
+ *
+ * 2. Tokens SEMÁNTICOS (--color-background, --color-primary, ...): describen
+ *    el ROL, no el color. Los componentes SOLO usan estos. Cuando el usuario
+ *    personalice el tema, se reasignan estos tokens (o la paleta cruda) y toda
+ *    la UI cambia sin tocar un solo componente.
+ *
+ * Paleta: azul metálico (steel) + blanco/gris/negro (neutral).
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* --- Paleta cruda: azul metálico (steel blue, con matiz grisáceo) --- */
+  --steel-50: #eef2f7;
+  --steel-100: #d6e0ec;
+  --steel-200: #adc1d8;
+  --steel-300: #7e9cbe;
+  --steel-400: #5178a3;
+  --steel-500: #3a5f87;
+  --steel-600: #2d4a6b;
+  --steel-700: #223850;
+  --steel-800: #182838;
+  --steel-900: #0f1a25;
+
+  /* --- Paleta cruda: neutros (blanco → gris → negro) --- */
+  --neutral-0: #ffffff;
+  --neutral-50: #f7f8fa;
+  --neutral-100: #eceef1;
+  --neutral-200: #d9dde2;
+  --neutral-300: #b8bfc8;
+  --neutral-400: #8b95a1;
+  --neutral-500: #626b76;
+  --neutral-600: #454c55;
+  --neutral-700: #2c3138;
+  --neutral-800: #1a1d22;
+  --neutral-900: #0d0f12;
+
+  /* --- Tokens semánticos (tema claro por defecto) --- */
+  --color-background: var(--neutral-0); /* fondo de la app */
+  --color-surface: var(--neutral-50); /* tarjetas, filas */
+  --color-surface-hover: var(--neutral-100);
+  --color-foreground: var(--neutral-900); /* texto principal */
+  --color-muted: var(--neutral-500); /* texto secundario */
+  --color-border: var(--neutral-200);
+
+  --color-primary: var(--steel-500); /* acción principal (azul metálico) */
+  --color-primary-hover: var(--steel-600);
+  --color-primary-foreground: var(--neutral-0); /* texto sobre primary */
+
+  --color-ring: var(--steel-400); /* anillo de foco (accesibilidad) */
 }
 
+/* --- Tema oscuro: reasigna SOLO los tokens semánticos --- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: var(--neutral-900);
+    --color-surface: var(--neutral-800);
+    --color-surface-hover: var(--neutral-700);
+    --color-foreground: var(--neutral-50);
+    --color-muted: var(--neutral-400);
+    --color-border: var(--neutral-700);
+
+    --color-primary: var(--steel-400);
+    --color-primary-hover: var(--steel-300);
+    --color-primary-foreground: var(--neutral-900);
+
+    --color-ring: var(--steel-400);
+  }
+}
+
+/*
+ * Exponemos los tokens semánticos a Tailwind v4 con @theme inline, para poder
+ * usar clases como `bg-background`, `text-foreground`, `bg-primary`, etc.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-foreground: var(--color-foreground);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-ring: var(--color-ring);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/*
+ * Animación de entrada reutilizable: aparición suave con leve desplazamiento
+ * hacia arriba. Se aplica con la clase `animate-rise`. Corta (200ms) y con
+ * easing suave → sensación premium sin lentitud.
+ */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.animate-rise {
+  animation: rise 0.2s ease-out both;
+}
+
+/* Oculta la scrollbar manteniendo el scroll (para carruseles horizontales). */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/*
+ * Accesibilidad + fluidez: si el usuario pidió menos movimiento en su sistema,
+ * anulamos animaciones y transiciones. Detalle de apps premium.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
