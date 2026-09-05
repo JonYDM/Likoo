@@ -5,10 +5,12 @@ import { useAuth } from "../lib/auth-context"
 import { useMe, useSavedTracks } from "../lib/hooks/spotify"
 import { Button } from "../components/ui/Button"
 import { TrackRow } from "../components/track/TrackRow"
+import { usePlayTrack } from "../lib/hooks/use-play-track"
 
 export default function Home() {
   const { accessToken, isLoading } = useAuth()
   const router = useRouter()
+  const playTrack = usePlayTrack()
 
   const { data: me } = useMe()
   const { data: savedData } = useSavedTracks()
@@ -60,7 +62,7 @@ export default function Home() {
           <ul className="flex flex-col gap-1">
             {savedTracks.map((track) => (
               <li key={track.id}>
-                <TrackRow track={track} />
+                <TrackRow track={track} onClick={() => playTrack(track.uri)} />
               </li>
             ))}
           </ul>

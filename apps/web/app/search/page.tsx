@@ -7,6 +7,7 @@ import { TrackRow } from "../../components/track/TrackRow"
 import { TrackListSkeleton } from "../../components/track/TrackRowSkeleton"
 import { Button } from "../../components/ui/Button"
 import { cn } from "../../lib/cn"
+import { usePlayTrack } from "../../lib/hooks/use-play-track"
 
 /**
  * Búsqueda (Fase 2) con experiencia premium y fluida:
@@ -18,6 +19,7 @@ import { cn } from "../../lib/cn"
 export default function SearchPage() {
   const [input, setInput] = useState("")
   const [debounced, setDebounced] = useState("")
+  const playTrack = usePlayTrack()
 
   useEffect(() => {
     const id = setTimeout(() => setDebounced(input), 400)
@@ -45,7 +47,7 @@ export default function SearchPage() {
   return (
     <main
       className={cn(
-        "mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-6",
+        "mx-auto flex min-h-dvh w-full max-w-4xl flex-col px-6",
         hasQuery ? "justify-start pt-10" : "justify-center pb-20",
       )}
     >
@@ -95,7 +97,7 @@ export default function SearchPage() {
                   // Stagger sutil: cada fila entra con un micro-retraso.
                   style={{ animationDelay: `${Math.min(i, 8) * 25}ms` }}
                 >
-                  <TrackRow track={track} />
+                  <TrackRow track={track} onClick={() => playTrack(track.uri)} />
                 </li>
               ))}
             </ul>

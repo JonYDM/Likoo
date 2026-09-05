@@ -168,6 +168,12 @@ async function spotifyFetch<T>(
       throw new SpotifyApiError(res.status, message)
     }
 
+    // Algunas respuestas (204 No Content, p.ej. control de reproducción) no
+    // traen body. Evitamos que res.json() falle devolviendo undefined.
+    if (res.status === 204 || res.headers.get("content-length") === "0") {
+      return undefined as T
+    }
+
     return (await res.json()) as T
   } catch (err) {
     if (err instanceof DOMException && err.name === "AbortError") {
@@ -311,6 +317,31 @@ export async function getPlaylistTracks(
   )
 }
 
+// ---------------------------------------------------------------------------
+// Reproducción (Web Playback SDK requiere Premium)
+// ---------------------------------------------------------------------------
+
 // Exponemos los mappers y el schema por si quieres testearlos por separado.
 export { mapTrack, mapPlaylist, mapUser, mapImage, mapPage }
 export type { RawAlbum, RawPlaylistTrackItem, RawSavedTrackItem }
+
+
+  /**
+   * Reproduce uno o más tracks en un dispositivo. Endpoint: PUT /me/player/play
+   * Requiere Premium (el Web Playback SDK solo streamea con Premium).
+   */
+  export async function playTracks(
+    accessToken: string,
+    deviceId: string,
+    trackUris: string[],
+  ): Promise<void> {
+    await spotifyFetch<void>(
+      accessToken,
+      `/me/player/play?device_id=${encodeURIComponent(deviceId)}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uris: trackUris }),
+      },
+    )
+  }

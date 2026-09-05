@@ -9,6 +9,7 @@ import { TrackCard } from "../../components/track/TrackCard"
 import { Button } from "../../components/ui/Button"
 import { FilterInput } from "../../components/ui/FilterInput"
 import { useAutoLoadAll } from "../../lib/hooks/useAutoLoadAll"
+import { usePlayTrack } from "../../lib/hooks/use-play-track"
 
 /**
  * Librería (Fase 2): punto central del contenido del usuario.
@@ -18,8 +19,10 @@ import { useAutoLoadAll } from "../../lib/hooks/useAutoLoadAll"
  * Los filtros son LOCALES: filtran en memoria lo ya cargado (sin llamar a la
  * API). Rápido y sin peticiones; para contenido no cargado, "Cargar más".
  */
+
 export default function LibraryPage() {
   const router = useRouter()
+  const playTrack = usePlayTrack()
 
   const carouselRef = useRef<HTMLDivElement>(null)
   function scrollCarousel(direction: "left" | "right") {
@@ -53,8 +56,14 @@ export default function LibraryPage() {
     isFetchingNextPage: fetchingMoreSaved,
   } = useSavedTracks()
 
-  const playlists = playlistsData?.pages.flatMap((p) => p.items) ?? []
-  const savedTracks = savedData?.pages.flatMap((p) => p.items) ?? []
+  const playlists = useMemo(
+    () => playlistsData?.pages.flatMap((p) => p.items) ?? [],
+    [playlistsData],
+  )
+  const savedTracks = useMemo(
+    () => savedData?.pages.flatMap((p) => p.items) ?? [],
+    [savedData],
+  )
   const savedTotal = savedData?.pages[0]?.total ?? 0
 
   // Al filtrar, cargamos todas las páginas (hasta el tope) para poder buscar
@@ -182,7 +191,11 @@ export default function LibraryPage() {
               className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth pb-2"
             >
               {filteredSaved.map((track) => (
-                <TrackCard key={track.id} track={track} />
+                <TrackCard
+                  key={track.id}
+                  track={track}
+                  onClick={() => playTrack(track.uri)}
+                />
               ))}
 
               {/* Mientras carga el resto por el filtro, tarjeta indicadora */}

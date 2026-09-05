@@ -8,6 +8,7 @@ import { TrackListSkeleton } from "../../../components/track/TrackRowSkeleton"
 import { Button } from "../../../components/ui/Button"
 import { FilterInput } from "../../../components/ui/FilterInput"
 import { useAutoLoadAll } from "../../../lib/hooks/useAutoLoadAll"
+import { usePlayTrack } from "../../../lib/hooks/use-play-track"
 
 /**
  * Detalle de una playlist (Fase 2).
@@ -19,6 +20,7 @@ import { useAutoLoadAll } from "../../../lib/hooks/useAutoLoadAll"
 export default function PlaylistPage() {
   const params = useParams<{ id: string }>()
   const id = params.id
+  const playTrack = usePlayTrack()
 
   const { data: playlist, isLoading: loadingPlaylist } = usePlaylist(id)
   const {
@@ -30,7 +32,10 @@ export default function PlaylistPage() {
     isFetchingNextPage,
   } = usePlaylistTracks(id)
 
-  const tracks = tracksData?.pages.flatMap((page) => page.items) ?? []
+  const tracks = useMemo(
+    () => tracksData?.pages.flatMap((page) => page.items) ?? [],
+    [tracksData],
+  )
   const cover = playlist?.images[0]?.url
 
   // Filtro local de las canciones cargadas (por nombre o artista).
@@ -58,7 +63,7 @@ export default function PlaylistPage() {
   }, [tracks, filter])
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-6 py-10">
+    <main className="mx-auto w-full max-w-4xl px-6 py-10">
       {/* Cabecera: portada + nombre */}
       <header className="mb-8 flex items-center gap-5">
         {cover ? (
@@ -131,7 +136,7 @@ export default function PlaylistPage() {
                   className="animate-rise"
                   style={{ animationDelay: `${Math.min(i, 8) * 25}ms` }}
                 >
-                  <TrackRow track={track} />
+                  <TrackRow track={track} onClick={() => playTrack(track.uri)} />
                 </li>
               ))}
             </ul>
