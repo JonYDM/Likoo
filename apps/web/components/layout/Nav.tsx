@@ -21,8 +21,8 @@ export function Nav() {
 
   return (
     <>
-      <BottomNav className="flex md:hidden" />
-      <SideNav className="hidden md:flex" />
+      <BottomNav className="flex lg:hidden" />
+      <SideNav className="hidden lg:flex" />
     </>
   )
 }

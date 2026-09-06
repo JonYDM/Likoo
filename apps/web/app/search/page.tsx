@@ -1,13 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
-import { useSearchTracks } from "../../lib/hooks/spotify"
-import { TrackRow } from "../../components/track/TrackRow"
+import { useSearchTracks, useTopArtists } from "../../lib/hooks/spotify"
 import { TrackListSkeleton } from "../../components/track/TrackRowSkeleton"
+import { VirtualTrackList } from "../../components/track/VirtualTrackList"
+import { ArtistStagger } from "../../components/artist/ArtistStagger"
 import { Button } from "../../components/ui/Button"
 import { cn } from "../../lib/cn"
 import { usePlayTrack } from "../../lib/hooks/use-play-track"
+import { getGreeting } from "../../lib/greeting"
 
 /**
  * Búsqueda (Fase 2) con experiencia premium y fluida:
@@ -20,6 +23,16 @@ export default function SearchPage() {
   const [input, setInput] = useState("")
   const [debounced, setDebounced] = useState("")
   const playTrack = usePlayTrack()
+  const router = useRouter()
+  const { data: topArtists } = useTopArtists(12)
+  const scrollRef = useRef<HTMLElement | null>(null)
+
+  // Frase gancho por hora (sin nombre), calculada en cliente.
+  const [greeting, setGreeting] = useState<string | null>(null)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setGreeting(getGreeting()))
+    return () => cancelAnimationFrame(id)
+  }, [])
 
   useEffect(() => {
     const id = setTimeout(() => setDebounced(input), 400)
@@ -46,19 +59,33 @@ export default function SearchPage() {
 
   return (
     <main
+      ref={scrollRef}
       className={cn(
-        "mx-auto flex min-h-dvh w-full max-w-4xl flex-col px-6",
-        hasQuery ? "justify-start pt-10" : "justify-center pb-20",
+        "no-scrollbar mx-auto flex h-full w-full max-w-4xl flex-col overflow-y-auto px-6",
+        hasQuery ? "justify-start pt-10" : "justify-center pb-20 pt-10",
       )}
     >
       {!hasQuery && (
         <h1 className="mb-6 text-center text-3xl font-bold tracking-tight text-foreground">
-          ¿Qué quieres escuchar?
+          {greeting ?? "¿Qué quieres escuchar?"}
         </h1>
       )}
 
       {/* Input con spinner sutil a la derecha (feedback inmediato) */}
-      <div className="relative w-full">
+      <div className="relative mx-auto w-[90%]">
+        {/*
+          Halo RGB: capa detrás del input con el color de la canción actual
+          (var(--album-color)) + blur, que "respira" animando solo opacity
+          (barato). Sobresale del input (inset negativo). Si no hay canción,
+          cae al azul de marca (--color-ring).
+        */}
+        <div
+          aria-hidden="true"
+          className="animate-halo pointer-events-none absolute -inset-0.5 -z-10 rounded-full blur-md"
+          style={{
+            background: "var(--album-color, var(--color-ring))",
+          }}
+        />
         <input
           type="text"
           value={input}
@@ -66,7 +93,7 @@ export default function SearchPage() {
           placeholder="¿Qué quieres escuchar?"
           aria-label="Buscar canciones"
           autoFocus
-          className="w-full rounded-full border border-border bg-surface px-6 py-4 pr-14 text-lg text-foreground shadow-lg outline-none transition-colors placeholder:text-muted focus-visible:ring-2 focus-visible:ring-ring"
+          className="w-full rounded-full border border-border bg-surface px-6 py-4 pr-14 text-lg text-foreground shadow-lg outline-none transition-colors placeholder:text-muted"
         />
         {showSpinner && (
           <Loader2
@@ -76,6 +103,16 @@ export default function SearchPage() {
           />
         )}
       </div>
+
+      {/* Estado vacío: tus artistas del momento en "escalera" (zigzag) */}
+      {!hasQuery && topArtists && topArtists.length > 0 && (
+        <div className="mt-10">
+          <ArtistStagger
+            artists={topArtists}
+            onSelect={(artist) => router.push(`/artist/${artist.id}`)}
+          />
+        </div>
+      )}
 
       {hasQuery && (
         <div className="mt-6">
@@ -89,18 +126,11 @@ export default function SearchPage() {
           ) : results.length === 0 ? (
             <p className="text-muted">Sin resultados para “{debounced}”.</p>
           ) : (
-            <ul className="flex flex-col gap-1">
-              {results.map((track, i) => (
-                <li
-                  key={track.id}
-                  className="animate-rise"
-                  // Stagger sutil: cada fila entra con un micro-retraso.
-                  style={{ animationDelay: `${Math.min(i, 8) * 25}ms` }}
-                >
-                  <TrackRow track={track} onClick={() => playTrack(track.uri)} />
-                </li>
-              ))}
-            </ul>
+            <VirtualTrackList
+              tracks={results}
+              scrollRef={scrollRef}
+              onPlay={(track) => playTrack(track.uri)}
+            />
           )}
 
           {hasNextPage && !isSearching && (

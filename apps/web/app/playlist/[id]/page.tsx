@@ -1,10 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useParams } from "next/navigation"
 import { usePlaylist, usePlaylistTracks } from "../../../lib/hooks/spotify"
-import { TrackRow } from "../../../components/track/TrackRow"
 import { TrackListSkeleton } from "../../../components/track/TrackRowSkeleton"
+import { VirtualTrackList } from "../../../components/track/VirtualTrackList"
 import { Button } from "../../../components/ui/Button"
 import { FilterInput } from "../../../components/ui/FilterInput"
 import { useAutoLoadAll } from "../../../lib/hooks/useAutoLoadAll"
@@ -21,6 +21,7 @@ export default function PlaylistPage() {
   const params = useParams<{ id: string }>()
   const id = params.id
   const playTrack = usePlayTrack()
+  const scrollRef = useRef<HTMLElement | null>(null)
 
   const { data: playlist, isLoading: loadingPlaylist } = usePlaylist(id)
   const {
@@ -63,7 +64,7 @@ export default function PlaylistPage() {
   }, [tracks, filter])
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-6 py-10">
+    <main ref={scrollRef} className="no-scrollbar fade-right h-full w-full overflow-y-auto px-6 py-10">
       {/* Cabecera: portada + nombre */}
       <header className="mb-8 flex items-center gap-5">
         {cover ? (
@@ -129,17 +130,11 @@ export default function PlaylistPage() {
                 : `Ninguna de las canciones coincide con “${filter}”.`}
             </p>
           ) : (
-            <ul className="flex flex-col gap-1">
-              {filteredTracks.map((track, i) => (
-                <li
-                  key={`${track.id}-${i}`}
-                  className="animate-rise"
-                  style={{ animationDelay: `${Math.min(i, 8) * 25}ms` }}
-                >
-                  <TrackRow track={track} onClick={() => playTrack(track.uri)} />
-                </li>
-              ))}
-            </ul>
+            <VirtualTrackList
+              tracks={filteredTracks}
+              scrollRef={scrollRef}
+              onPlay={(track) => playTrack(track.uri)}
+            />
           )}
 
           {hasNextPage && !filter && (

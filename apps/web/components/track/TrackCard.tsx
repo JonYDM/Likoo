@@ -1,3 +1,4 @@
+import Image from "next/image"
 import type { SpotifyTrack } from "@spotify-clone/shared"
 
 export interface TrackCardProps {
@@ -19,13 +20,15 @@ export function TrackCard({ track, onClick }: TrackCardProps) {
       className="group flex w-40 shrink-0 flex-col gap-2 rounded-lg border border-border bg-surface p-3 text-left outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring"
     >
       {cover ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={cover}
-          alt=""
-          loading="lazy"
-          className="aspect-square w-full rounded object-cover"
-        />
+        <div className="relative aspect-square w-full overflow-hidden rounded">
+          <Image
+            src={cover}
+            alt=""
+            fill
+            sizes="160px"
+            className="object-cover"
+          />
+        </div>
       ) : (
         <div className="aspect-square w-full rounded bg-surface-hover" />
       )}

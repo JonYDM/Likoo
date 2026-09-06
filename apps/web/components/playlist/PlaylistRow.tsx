@@ -1,4 +1,5 @@
 import { forwardRef } from "react"
+import Image from "next/image"
 import type { SpotifyPlaylist } from "@spotify-clone/shared"
 import { cn } from "../../lib/cn"
 
@@ -21,20 +22,18 @@ export const PlaylistRow = forwardRef<HTMLButtonElement, PlaylistRowProps>(
         ref={ref}
         className={cn(
           "flex w-full items-center gap-3 rounded-md p-2 text-left",
-          "transition-colors hover:bg-surface-hover",
+          "transition-colors duration-200 hover:bg-surface-hover",
           "outline-none focus-visible:ring-2 focus-visible:ring-ring",
           className,
         )}
         {...props}
       >
         {thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={thumb}
             alt=""
             width={48}
             height={48}
-            loading="lazy"
             className="h-12 w-12 shrink-0 rounded object-cover"
           />
         ) : (

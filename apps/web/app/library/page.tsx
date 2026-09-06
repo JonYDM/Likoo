@@ -109,17 +109,17 @@ export default function LibraryPage() {
   }, [playlists, playlistFilter])
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-6 py-10">
-      <header className="mb-8 space-y-2">
+    <div className="flex h-full w-full flex-col overflow-hidden px-6 pt-10">
+      <header className="mb-8 shrink-0 space-y-2">
         <div className="h-1 w-12 rounded-full bg-primary" />
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">
           Tu librería
         </h1>
       </header>
 
-      <div className="flex flex-col gap-10">
-        {/* Tus me gusta — carrusel horizontal */}
-        <section>
+      <div className="flex min-h-0 flex-1 flex-col gap-8 pb-10">
+        {/* Tus me gusta — carrusel horizontal (alto natural) */}
+        <section className="shrink-0">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-foreground">
               Tus me gusta
@@ -189,6 +189,12 @@ export default function LibraryPage() {
             <div
               ref={carouselRef}
               className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth pb-2"
+              style={{
+                maskImage:
+                  "linear-gradient(to right, black calc(100% - 4rem), transparent 100%)",
+                WebkitMaskImage:
+                  "linear-gradient(to right, black calc(100% - 4rem), transparent 100%)",
+              }}
             >
               {filteredSaved.map((track) => (
                 <TrackCard
@@ -220,9 +226,9 @@ export default function LibraryPage() {
           )}
         </section>
 
-        {/* Tus playlists — filas */}
-        <section>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        {/* Tus playlists — panel contenido (card con fondo, sombra, redondeo) */}
+        <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-border bg-surface/60 p-5 shadow-lg">
+          <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-foreground">
               Tus playlists
             </h2>
@@ -262,7 +268,9 @@ export default function LibraryPage() {
                 : `Ninguna playlist coincide con “${playlistFilter}”.`}
             </p>
           ) : (
-            <>
+            // Caja con scroll interno: la lista scrollea aquí dentro, no la
+            // página. Scrollbar visible (azul) para indicar que hay más.
+            <div className="scroll-visible min-h-0 flex-1 overflow-y-auto pr-2">
               <ul className="flex flex-col gap-1">
                 {filteredPlaylists.map((playlist) => (
                   <li key={playlist.id}>
@@ -285,10 +293,24 @@ export default function LibraryPage() {
                   </Button>
                 </div>
               )}
-            </>
+            </div>
           )}
+
+          {/*
+            Difuminado inferior del PANEL (con el color del anillo de focus).
+            Vive a nivel de la <section> (no dentro del scroll), así queda fijo
+            sobre el borde inferior del panel mientras la lista scrollea detrás.
+          */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-20 rounded-b-3xl"
+            style={{
+              background:
+                "linear-gradient(to bottom, transparent, color-mix(in srgb, var(--color-ring) 25%, transparent))",
+            }}
+          />
         </section>
       </div>
-    </main>
+    </div>
   )
 }

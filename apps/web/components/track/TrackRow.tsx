@@ -1,4 +1,5 @@
-import { forwardRef } from "react"
+import { forwardRef, memo } from "react"
+import Image from "next/image"
 import type { SpotifyTrack } from "@spotify-clone/shared"
 import { cn } from "../../lib/cn"
 
@@ -7,7 +8,8 @@ export interface TrackRowProps
     track: SpotifyTrack
   }
 
-  export const TrackRow = forwardRef<HTMLButtonElement, TrackRowProps>(
+  export const TrackRow = memo(
+    forwardRef<HTMLButtonElement, TrackRowProps>(
     ({ track, className, ...props }, ref) => {
       // Elige la imagen MÁS PEQUEÑA para el thumbnail (cuidado del peso).
       // Spotify ordena las imágenes de mayor a menor, así que la última es la menor.
@@ -25,13 +27,11 @@ export interface TrackRowProps
           {...props}
         >
           {thumb && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={thumb}
               alt=""
               width={40}
               height={40}
-              loading="lazy"
               className="h-10 w-10 shrink-0 rounded object-cover"
             />
           )}
@@ -44,5 +44,6 @@ export interface TrackRowProps
         </button>
       )
     },
+  ),
   )
   TrackRow.displayName = "TrackRow"

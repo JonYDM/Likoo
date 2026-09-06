@@ -1,11 +1,20 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "../lib/auth-context"
-import { useMe, useSavedTracks } from "../lib/hooks/spotify"
-import { Button } from "../components/ui/Button"
-import { TrackRow } from "../components/track/TrackRow"
+import {
+  useMe,
+  useRecentlyPlayed,
+  useTopArtists,
+  useTopTracks,
+} from "../lib/hooks/spotify"
 import { usePlayTrack } from "../lib/hooks/use-play-track"
+import { getGreeting } from "../lib/greeting"
+import { TrackCard } from "../components/track/TrackCard"
+import { ArtistCard } from "../components/artist/ArtistCard"
+import { Carousel } from "../components/ui/Carousel"
+import type { SpotifyTrack } from "@spotify-clone/shared"
 
 export default function Home() {
   const { accessToken, isLoading } = useAuth()
@@ -13,11 +22,22 @@ export default function Home() {
   const playTrack = usePlayTrack()
 
   const { data: me } = useMe()
-  const { data: savedData } = useSavedTracks()
+  const { data: recent } = useRecentlyPlayed(15)
+  const { data: topArtists } = useTopArtists(12)
+  const { data: topTracks } = useTopTracks(12)
+
+  // Saludo por hora, calculado en cliente (evita hydration mismatch).
+  const [greeting, setGreeting] = useState<string | null>(null)
+  useEffect(() => {
+    const id = requestAnimationFrame(() =>
+      setGreeting(getGreeting({ name: me?.displayName })),
+    )
+    return () => cancelAnimationFrame(id)
+  }, [me?.displayName])
 
   if (isLoading) {
     return (
-      <main className="flex min-h-[60dvh] items-center justify-center">
+      <main className="flex h-full items-center justify-center">
         <p className="text-muted">Cargando...</p>
       </main>
     )
@@ -25,49 +45,59 @@ export default function Home() {
 
   if (!accessToken) {
     return (
-      <main className="flex min-h-[60dvh] items-center justify-center">
+      <main className="flex h-full items-center justify-center">
         <p className="text-muted">No autenticado</p>
       </main>
     )
   }
 
-  const savedTracks = (savedData?.pages[0]?.items ?? []).slice(0, 5)
+  const trackCard = (track: SpotifyTrack) => (
+    <TrackCard
+      key={track.id}
+      track={track}
+      onClick={() => playTrack(track.uri)}
+    />
+  )
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-4xl flex-col justify-center px-6 py-10">
+    <main className="no-scrollbar fade-right h-full w-full overflow-y-auto px-6 py-10">
       {/* Saludo */}
       <header className="mb-8 space-y-2">
         <div className="h-1 w-12 rounded-full bg-primary" />
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          {me?.displayName ? `Hola, ${me.displayName}` : "Bienvenido"}
+          {greeting ?? (me?.displayName ? `Hola, ${me.displayName}` : "Bienvenido")}
         </h1>
-        <p className="text-muted">¿Qué quieres escuchar hoy?</p>
+        <p className="text-muted">Esto es lo que has estado escuchando.</p>
       </header>
 
-      {/* Tus me gusta (preview) */}
-      {savedTracks.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">
-              Tus me gusta
-            </h2>
-            <Button
-              intent="ghost"
-              size="sm"
-              onClick={() => router.push("/library")}
-            >
-              Ver todo
-            </Button>
-          </div>
-          <ul className="flex flex-col gap-1">
-            {savedTracks.map((track) => (
-              <li key={track.id}>
-                <TrackRow track={track} onClick={() => playTrack(track.uri)} />
-              </li>
+      <div className="flex flex-col gap-10">
+        {/* Escuchado recientemente */}
+        {recent && recent.length > 0 && (
+          <Carousel title="Escuchado recientemente">
+            {recent.map(trackCard)}
+          </Carousel>
+        )}
+
+        {/* Tus top artistas */}
+        {topArtists && topArtists.length > 0 && (
+          <Carousel title="Tus artistas del momento">
+            {topArtists.map((artist) => (
+              <ArtistCard
+                key={artist.id}
+                artist={artist}
+                onClick={() => router.push(`/artist/${artist.id}`)}
+              />
             ))}
-          </ul>
-        </section>
-      )}
+          </Carousel>
+        )}
+
+        {/* Tus top canciones */}
+        {topTracks && topTracks.length > 0 && (
+          <Carousel title="Tus canciones favoritas">
+            {topTracks.map(trackCard)}
+          </Carousel>
+        )}
+      </div>
     </main>
   )
 }

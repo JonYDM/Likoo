@@ -14,13 +14,18 @@ import { z } from "zod"
 import type {
   Paginated,
   RawAlbum,
+  RawAlbumFull,
+  RawArtistFull,
   RawImage,
   RawPaginated,
   RawPlaylist,
   RawPlaylistTrackItem,
+  RawRecentlyPlayedItem,
   RawSavedTrackItem,
   RawTrack,
   RawUser,
+  SpotifyAlbum,
+  SpotifyArtist,
   SpotifyImage,
   SpotifyPlaylist,
   SpotifyTrack,
@@ -99,6 +104,26 @@ function mapUser(raw: RawUser): SpotifyUser {
     id: raw.id,
     displayName: raw.display_name,
     images: raw.images?.map(mapImage) ?? [],
+  }
+}
+
+function mapArtist(raw: RawArtistFull): SpotifyArtist {
+  return {
+    id: raw.id,
+    name: raw.name,
+    uri: raw.uri,
+    images: raw.images?.map(mapImage) ?? [],
+  }
+}
+
+function mapAlbum(raw: RawAlbumFull): SpotifyAlbum {
+  return {
+    id: raw.id,
+    name: raw.name,
+    uri: raw.uri,
+    images: raw.images?.map(mapImage) ?? [],
+    releaseDate: raw.release_date,
+    totalTracks: raw.total_tracks,
   }
 }
 
@@ -209,6 +234,101 @@ export interface PageOptions {
 export async function getMe(accessToken: string): Promise<SpotifyUser> {
   const res = await spotifyFetch<RawUser>(accessToken, "/me")
   return mapUser(res)
+}
+
+/** Rango de tiempo para los "top items" del usuario. */
+export type TopTimeRange = "short_term" | "medium_term" | "long_term"
+
+/**
+ * Top artistas del usuario. GET /me/top/artists
+ * Requiere scope user-top-read.
+ */
+export async function getTopArtists(
+  accessToken: string,
+  opts: PageOptions & { timeRange?: TopTimeRange } = {},
+): Promise<Paginated<SpotifyArtist>> {
+  const params = pageParams(opts)
+  params.set("time_range", opts.timeRange ?? "medium_term")
+  const res = await spotifyFetch<RawPaginated<RawArtistFull>>(
+    accessToken,
+    `/me/top/artists?${params.toString()}`,
+  )
+  return mapPage(res, mapArtist)
+}
+
+/**
+ * Top tracks del usuario. GET /me/top/tracks
+ * Requiere scope user-top-read.
+ */
+export async function getTopTracks(
+  accessToken: string,
+  opts: PageOptions & { timeRange?: TopTimeRange } = {},
+): Promise<Paginated<SpotifyTrack>> {
+  const params = pageParams(opts)
+  params.set("time_range", opts.timeRange ?? "medium_term")
+  const res = await spotifyFetch<RawPaginated<RawTrack>>(
+    accessToken,
+    `/me/top/tracks?${params.toString()}`,
+  )
+  return mapPage(res, mapTrack)
+}
+
+/**
+ * Tracks escuchados recientemente. GET /me/player/recently-played
+ * Requiere scope user-read-recently-played. Cada item viene como { track }.
+ * No es offset-based (usa cursores), pero para nuestra vista basta la primera
+ * página, así que devolvemos solo los tracks mapeados.
+ */
+export async function getRecentlyPlayed(
+  accessToken: string,
+  opts: { limit?: number } = {},
+): Promise<SpotifyTrack[]> {
+  const params = new URLSearchParams()
+  params.set("limit", String(opts.limit ?? 20))
+  const res = await spotifyFetch<{ items: RawRecentlyPlayedItem[] }>(
+    accessToken,
+    `/me/player/recently-played?${params.toString()}`,
+  )
+  if (!Array.isArray(res.items)) return []
+  // Recientes puede repetir tracks; deduplicamos por id conservando el orden.
+  const seen = new Set<string>()
+  const result: SpotifyTrack[] = []
+  for (const item of res.items) {
+    if (item.track && !seen.has(item.track.id)) {
+      seen.add(item.track.id)
+      result.push(mapTrack(item.track))
+    }
+  }
+  return result
+}
+
+/**
+ * Detalle de un artista. GET /artists/{id}
+ */
+export async function getArtist(
+  accessToken: string,
+  artistId: string,
+): Promise<SpotifyArtist> {
+  const res = await spotifyFetch<RawArtistFull>(
+    accessToken,
+    `/artists/${encodeURIComponent(artistId)}`,
+  )
+  return mapArtist(res)
+}
+
+/**
+ * Álbumes de un artista. GET /artists/{id}/albums
+ */
+export async function getArtistAlbums(
+  accessToken: string,
+  artistId: string,
+  opts: PageOptions = {},
+): Promise<Paginated<SpotifyAlbum>> {
+  const res = await spotifyFetch<RawPaginated<RawAlbumFull>>(
+    accessToken,
+    `/artists/${encodeURIComponent(artistId)}/albums?${pageParams(opts).toString()}`,
+  )
+  return mapPage(res, mapAlbum)
 }
 
 /**
@@ -322,7 +442,7 @@ export async function getPlaylistTracks(
 // ---------------------------------------------------------------------------
 
 // Exponemos los mappers y el schema por si quieres testearlos por separado.
-export { mapTrack, mapPlaylist, mapUser, mapImage, mapPage }
+export { mapTrack, mapPlaylist, mapUser, mapArtist, mapAlbum, mapImage, mapPage }
 export type { RawAlbum, RawPlaylistTrackItem, RawSavedTrackItem }
 
 

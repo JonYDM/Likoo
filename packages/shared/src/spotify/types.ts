@@ -38,6 +38,24 @@ export interface SpotifyArtistRef {
   name: string
 }
 
+/** Artista completo (con imágenes), para tarjetas y página de artista. */
+export interface SpotifyArtist {
+  id: string
+  name: string
+  uri: string
+  images: SpotifyImage[]
+}
+
+/** Álbum (para la página de artista). */
+export interface SpotifyAlbum {
+  id: string
+  name: string
+  uri: string
+  images: SpotifyImage[]
+  releaseDate: string
+  totalTracks: number
+}
+
 export interface SpotifyTrack {
   id: string
   name: string
@@ -84,6 +102,29 @@ export interface RawImage {
 export interface RawArtist {
   id: string
   name: string
+}
+
+/** Artista completo (GET /artists/{id}, /me/top/artists, /me/following). */
+export interface RawArtistFull {
+  id: string
+  name: string
+  uri: string
+  images: RawImage[]
+}
+
+/** Álbum completo (GET /artists/{id}/albums). */
+export interface RawAlbumFull {
+  id: string
+  name: string
+  uri: string
+  images: RawImage[]
+  release_date: string
+  total_tracks: number
+}
+
+/** Item de "recently played": el track viene en `track`. */
+export interface RawRecentlyPlayedItem {
+  track: RawTrack
 }
 
 export interface RawAlbum {

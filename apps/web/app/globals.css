@@ -95,10 +95,57 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+ * html/body a altura fija del viewport, sin overflow: la barra de scroll del
+ * sistema NO debe aparecer nunca. El scroll vive dentro de cada contenedor
+ * (con la scrollbar custom "scroll-ghost"), no en la ventana.
+ */
+html,
+body {
+  height: 100dvh;
+  overflow: hidden;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/*
+ * Fade del borde DERECHO reutilizable: difumina el contenido en el borde
+ * derecho (mask CSS). Se aplica con la clase `fade-right` a cualquier
+ * contenedor (carruseles, listas, páginas) para un efecto consistente.
+ */
+.fade-right {
+  mask-image: linear-gradient(
+    to right,
+    black calc(100% - 4rem),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black calc(100% - 4rem),
+    transparent 100%
+  );
+}
+
+/* Fade pequeño en AMBOS lados (izquierda y derecha). */
+.fade-x {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 1.5rem,
+    black calc(100% - 1.5rem),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 1.5rem,
+    black calc(100% - 1.5rem),
+    transparent 100%
+  );
 }
 
 /*
@@ -117,6 +164,90 @@ body {
   }
 }
 
+/*
+ * "Canvas casero" (efecto Ken Burns): zoom + pan lento sobre la carátula, en
+ * loop. SOLO anima transform → compositado por GPU, sin repaint/reflow: coste
+ * casi nulo aunque corra continuo. alternate para que el ida-y-vuelta sea suave
+ * (no salta al reiniciar). Se aplica con `animate-ken-burns`.
+ */
+@keyframes ken-burns {
+  0% {
+    transform: scale(1.1) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.25) translate(-2%, -3%);
+  }
+}
+
+.animate-ken-burns {
+  animation: ken-burns 18s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/*
+ * Pulso del halo RGB del input: solo anima OPACITY (barato, GPU). El color lo
+ * pone una capa detrás con var(--album-color) + blur. "Respira" lento.
+ */
+@keyframes halo-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.animate-halo {
+  animation: halo-pulse 3s ease-in-out infinite;
+}
+
+/*
+ * Bounce sutil del resplandor de color del reproductor. SOLO anima transform
+ * (scale) y opacity → lo maneja la GPU, sin reflow/repaint: barato incluso en
+ * dispositivos con pocos recursos. Ciclo lento tipo "respiración".
+ * Se aplica con `animate-pulse-glow`.
+ */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+/*
+ * Brillo intermitente para las letras del logo (LIKOO): cada letra sube y baja
+ * su opacidad y un halo blanco (text-shadow), en loop. Se escalona por letra
+ * con animation-delay para el efecto "onda". Ciclo lento para que sea elegante.
+ */
+@keyframes letter-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    opacity: 1;
+    text-shadow:
+      0 0 12px rgba(255, 255, 255, 0.9),
+      0 0 20px rgba(255, 255, 255, 0.4);
+  }
+}
+
+.animate-letter-glow {
+  animation: letter-glow 2.4s ease-in-out infinite;
+}
+
 .animate-rise {
   animation: rise 0.2s ease-out both;
 }
@@ -128,6 +259,28 @@ body {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
+}
+
+/*
+ * Scrollbar SIEMPRE visible (thumb azul). Para contenedores donde queremos que
+ * el usuario vea que hay scroll (p.ej. "Tus playlists" en la librería).
+ */
+.scroll-visible {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) transparent;
+}
+.scroll-visible::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-visible::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-visible::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 /*

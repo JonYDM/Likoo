@@ -13,8 +13,9 @@ export async function GET() {
     // streaming + user-read-*: Web Playback SDK y perfil (Fase 3).
     // user-library-read: "Tus me gusta" (saved tracks).
     // playlist-read-private: playlists privadas del usuario. (Fase 2)
+    // user-top-read: top artistas/tracks. user-read-recently-played: recientes.
     scope:
-      "streaming user-read-email user-read-private user-library-read playlist-read-private",
+      "streaming user-read-email user-read-private user-library-read playlist-read-private user-top-read user-read-recently-played",
     code_challenge_method: "S256",
     code_challenge: challenge,
     state,
