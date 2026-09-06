@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react"
 import { useParams } from "next/navigation"
-import { usePlaylist, usePlaylistTracks } from "../../../lib/hooks/spotify"
+import { useMe, usePlaylist, usePlaylistTracks } from "../../../lib/hooks/spotify"
 import { TrackListSkeleton } from "../../../components/track/TrackRowSkeleton"
 import { VirtualTrackList } from "../../../components/track/VirtualTrackList"
 import { Button } from "../../../components/ui/Button"
@@ -22,6 +22,7 @@ export default function PlaylistPage() {
   const id = params.id
   const playTrack = usePlayTrack()
   const scrollRef = useRef<HTMLElement | null>(null)
+  const { data: me } = useMe()
 
   const { data: playlist, isLoading: loadingPlaylist } = usePlaylist(id)
   const {
@@ -38,6 +39,9 @@ export default function PlaylistPage() {
     [tracksData],
   )
   const cover = playlist?.images[0]?.url
+  // ¿La playlist es del usuario actual? Si lo es y está vacía, es "vacía" (no
+  // "sin acceso"). Si no es suya y viene vacía, es que dev mode no da acceso.
+  const isOwn = !!me && !!playlist && playlist.owner.id === me.id
 
   // Filtro local de las canciones cargadas (por nombre o artista).
   const [filter, setFilter] = useState("")
@@ -102,13 +106,24 @@ export default function PlaylistPage() {
         </p>
       ) : tracks.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface p-6 text-center">
-          <p className="text-foreground">
-            No se pueden mostrar las canciones de esta playlist.
-          </p>
-          <p className="mt-2 text-sm text-muted">
-            En modo desarrollo, Spotify solo permite ver el contenido de las
-            playlists que tú creaste o en las que colaboras.
-          </p>
+          {isOwn ? (
+            <>
+              <p className="text-foreground">Esta playlist está vacía.</p>
+              <p className="mt-2 text-sm text-muted">
+                Añade canciones desde la búsqueda o desde cualquier lista.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-foreground">
+                No se pueden mostrar las canciones de esta playlist.
+              </p>
+              <p className="mt-2 text-sm text-muted">
+                En modo desarrollo, Spotify solo permite ver el contenido de las
+                playlists que tú creaste o en las que colaboras.
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <>

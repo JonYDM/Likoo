@@ -465,3 +465,76 @@ export type { RawAlbum, RawPlaylistTrackItem, RawSavedTrackItem }
       },
     )
   }
+
+
+// ---------------------------------------------------------------------------
+// Escritura (biblioteca y playlists) — requiere scopes *-modify
+// ---------------------------------------------------------------------------
+
+/**
+ * Crea una playlist para el usuario actual. POST /me/playlists
+ * Requiere playlist-modify-private/public. Devuelve la playlist creada.
+ */
+export async function createPlaylist(
+  accessToken: string,
+  params: { name: string; description?: string; isPublic?: boolean },
+): Promise<SpotifyPlaylist> {
+  const res = await spotifyFetch<RawPlaylist>(accessToken, "/me/playlists", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: params.name,
+      description: params.description ?? "",
+      public: params.isPublic ?? false,
+    }),
+  })
+  return mapPlaylist(res)
+}
+
+/**
+ * Añade tracks a una playlist. POST /playlists/{id}/items (renombrado feb 2026).
+ * Requiere playlist-modify-*.
+ */
+export async function addTracksToPlaylist(
+  accessToken: string,
+  playlistId: string,
+  trackUris: string[],
+): Promise<void> {
+  await spotifyFetch<void>(
+    accessToken,
+    `/playlists/${encodeURIComponent(playlistId)}/items`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uris: trackUris }),
+    },
+  )
+}
+
+/**
+ * Guarda items en la biblioteca del usuario ("me gusta"). PUT /me/library
+ * (endpoint genérico de feb 2026; acepta URIs de cualquier tipo).
+ * Requiere user-library-modify.
+ */
+export async function saveToLibrary(
+  accessToken: string,
+  uris: string[],
+): Promise<void> {
+  await spotifyFetch<void>(accessToken, "/me/library", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uris }),
+  })
+}
+
+/** Quita items de la biblioteca. DELETE /me/library */
+export async function removeFromLibrary(
+  accessToken: string,
+  uris: string[],
+): Promise<void> {
+  await spotifyFetch<void>(accessToken, "/me/library", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uris }),
+  })
+}

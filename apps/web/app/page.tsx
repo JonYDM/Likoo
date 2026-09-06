@@ -14,6 +14,7 @@ import { getGreeting } from "../lib/greeting"
 import { TrackCard } from "../components/track/TrackCard"
 import { ArtistCard } from "../components/artist/ArtistCard"
 import { Carousel } from "../components/ui/Carousel"
+import { CreatePlaylistButton } from "../components/playlist/CreatePlaylistButton"
 import type { SpotifyTrack } from "@spotify-clone/shared"
 
 export default function Home() {
@@ -61,13 +62,17 @@ export default function Home() {
 
   return (
     <main className="no-scrollbar fade-right h-full w-full overflow-y-auto px-6 py-10">
-      {/* Saludo */}
-      <header className="mb-8 space-y-2">
-        <div className="h-1 w-12 rounded-full bg-primary" />
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          {greeting ?? (me?.displayName ? `Hola, ${me.displayName}` : "Bienvenido")}
-        </h1>
-        <p className="text-muted">Esto es lo que has estado escuchando.</p>
+      {/* Saludo + acción de crear (enfrente, a la derecha) */}
+      <header className="mb-8 flex items-center justify-between gap-4 pr-4 sm:pr-8">
+        <div className="space-y-2">
+          <div className="h-1 w-12 rounded-full bg-primary" />
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            {greeting ??
+              (me?.displayName ? `Hola, ${me.displayName}` : "Bienvenido")}
+          </h1>
+          <p className="text-muted">Esto es lo que has estado escuchando.</p>
+        </div>
+        <CreatePlaylistButton />
       </header>
 
       <div className="flex flex-col gap-10">

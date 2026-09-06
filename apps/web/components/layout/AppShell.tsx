@@ -20,6 +20,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-dvh lg:grid lg:grid-cols-[minmax(12rem,16rem)_1fr_minmax(20rem,24rem)]">
+      {/*
+        Tinte de ambiente: capa fija detrás de TODO con el color de la canción
+        actual (var(--album-color)). Muy sutil (solo se intuye) y con transición
+        lenta al cambiar de canción. Si no hay canción, es transparente.
+        pointer-events-none para no interferir.
+      */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 transition-[background] duration-1000 ease-out"
+        style={{
+          background:
+            "radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--album-color, transparent) 12%, transparent), transparent 70%)",
+        }}
+      />
+
       {/* Columna izquierda: navegación (desktop) */}
       <Nav />
 

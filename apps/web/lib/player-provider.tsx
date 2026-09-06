@@ -30,9 +30,15 @@
       setPlayer,
     } = usePlayerStore()
 
+    // ¿Hay sesión? (booleano estable). Usamos esto —no el valor del token— como
+    // dependencia del effect de creación, para que el player se cree UNA vez y
+    // NO se destruya/recree cada vez que el token se refresca (el getOAuthToken
+    // ya lee el token fresco vía tokenRef).
+    const hasToken = !!accessToken
+
     useEffect(() => {
-      // Sin token aún → no inicializamos.
-      if (!accessToken) return
+      // Sin sesión aún → no inicializamos.
+      if (!hasToken) return
       // Ya hay player creado → no dupliques.
       if (playerRef.current) return
 
@@ -98,13 +104,13 @@
         }
       }
 
-      // Cleanup: al desmontar, desconecta el player.
+      // Cleanup: al desmontar de verdad (no en cada refresh), desconecta.
       return () => {
         playerRef.current?.disconnect()
         playerRef.current = null
         setPlayer(null)
       }
-    }, [accessToken, setDeviceId, setReady, setPremiumRequired, setPlaybackState, setPlayer])
+    }, [hasToken, setDeviceId, setReady, setPremiumRequired, setPlaybackState, setPlayer])
 
     return <>{children}</>
   }

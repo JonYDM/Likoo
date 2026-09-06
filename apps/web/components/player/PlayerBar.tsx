@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import {
   Play,
   Pause,
@@ -8,10 +9,13 @@ import {
   SkipForward,
   ChevronDown,
   ChevronUp,
+  Music,
+  Search,
 } from "lucide-react"
 import { usePlayerStore } from "../../lib/player-store"
 import { cn } from "../../lib/cn"
 import { useAlbumColor } from "../../lib/hooks/use-album-color"
+import { useAlbumPalette } from "../../lib/hooks/use-album-palette"
 
 /** Formatea milisegundos como m:ss. */
 function fmt(ms: number): string {
@@ -65,6 +69,8 @@ export function PlayerBar() {
   // Color dominante de la carátula (para el efecto de fondo del lienzo).
   // Se llama antes de cualquier return condicional (reglas de hooks).
   const albumColor = useAlbumColor(currentTrack?.albumArt)
+  // Paleta (3 colores) para las "luces" flotantes del lienzo.
+  const palette = useAlbumPalette(currentTrack?.albumArt, 3)
 
   // Publicamos el color como variable CSS global (--album-color) en :root. Así
   // cualquier componente (player, perfil...) lo usa vía var(--album-color) en
@@ -158,40 +164,32 @@ export function PlayerBar() {
               : undefined
           }
         >
-          {/* "Canvas casero": la carátula de fondo con zoom/pan lento (Ken
-              Burns). Oscurecida y difuminada para que la card resalte encima.
-              Solo se anima mientras reproduce. Solo transform → GPU. */}
-          {cover && (
+          {/* Luces de color: blobs con la PALETA de la canción, flotando lento
+              (solo transform → GPU). El fondo del lienzo son los colores de la
+              rola, no la carátula. Detrás del contenido (z-0). */}
+          {palette.length > 0 && (
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+              className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={cover}
-                alt=""
-                className={cn(
-                  "h-full w-full scale-110 object-cover opacity-30 blur-2xl",
-                  !isPaused && "animate-ken-burns",
-                )}
+              <div
+                className="animate-blob-a absolute left-[10%] top-[15%] h-2/3 w-2/3 rounded-full blur-3xl"
+                style={{ background: palette[0], opacity: 0.5 }}
               />
+              {palette[1] && (
+                <div
+                  className="animate-blob-b absolute right-[5%] top-[30%] h-2/3 w-2/3 rounded-full blur-3xl"
+                  style={{ background: palette[1], opacity: 0.45 }}
+                />
+              )}
+              {palette[2] && (
+                <div
+                  className="animate-blob-c absolute bottom-[10%] left-[20%] h-2/3 w-2/3 rounded-full blur-3xl"
+                  style={{ background: palette[2], opacity: 0.4 }}
+                />
+              )}
             </div>
           )}
-
-          {/* Capa de color: resplandor con el color dominante de la carátula. */}
-          <div
-            aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-0 -z-0 transition-[background] duration-700 ease-out",
-              // Bounce sutil solo cuando hay color y está sonando (no pausado).
-              albumColor && !isPaused && "animate-pulse-glow",
-            )}
-            style={{
-              background: albumColor
-                ? `radial-gradient(120% 80% at 50% 100%, ${albumColor}66 0%, transparent 70%)`
-                : undefined,
-            }}
-          />
 
           {currentTrack ? (
             <div className="relative z-10 flex w-full max-w-xs flex-col gap-4">
@@ -221,9 +219,26 @@ export function PlayerBar() {
               <div className="flex justify-center">{controls}</div>
             </div>
           ) : (
-            <p className="relative z-10 text-sm text-muted">
-              Nada sonando todavía.
-          </p>
+            <div className="relative z-10 flex flex-col items-center gap-4 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-hover text-muted">
+                <Music size={28} />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">
+                  Nada suena ahora
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  Elige una canción para volver a darle play.
+                </p>
+              </div>
+              <Link
+                href="/search"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+              >
+                <Search size={16} />
+                Buscar música
+              </Link>
+            </div>
           )}
         </div>
       </aside>

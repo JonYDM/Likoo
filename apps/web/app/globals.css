@@ -203,6 +203,27 @@ body {
 }
 
 /*
+ * Blobs de color flotantes (luces): se desplazan y escalan lento en loop.
+ * SOLO transform → GPU. Tres variantes con recorridos distintos para que no se
+ * muevan sincronizados. Se usan en el lienzo del reproductor con la paleta.
+ */
+@keyframes blob-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20%, 15%) scale(1.3); }
+}
+@keyframes blob-b {
+  0%, 100% { transform: translate(0, 0) scale(1.2); }
+  50% { transform: translate(-18%, -12%) scale(0.9); }
+}
+@keyframes blob-c {
+  0%, 100% { transform: translate(0, 0) scale(0.9); }
+  50% { transform: translate(12%, -20%) scale(1.25); }
+}
+.animate-blob-a { animation: blob-a 12s ease-in-out infinite; }
+.animate-blob-b { animation: blob-b 16s ease-in-out infinite; }
+.animate-blob-c { animation: blob-c 20s ease-in-out infinite; }
+
+/*
  * Bounce sutil del resplandor de color del reproductor. SOLO anima transform
  * (scale) y opacity → lo maneja la GPU, sin reflow/repaint: barato incluso en
  * dispositivos con pocos recursos. Ciclo lento tipo "respiración".
