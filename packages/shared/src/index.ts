@@ -4,3 +4,6 @@
 export * from "./auth/pkce";
 export * from "./spotify/types";
 export * from "./spotify/client";
+export * from "./game/types";
+export * from "./game/engine";
+export * from "./game/genres";

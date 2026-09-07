@@ -16,7 +16,7 @@ export function ArtistStagger({ artists, onSelect }: ArtistStaggerProps) {
   return (
     <div className="no-scrollbar fade-x flex items-center gap-4 overflow-x-auto py-6">
       {artists.map((artist, i) => {
-        const img = artist.images[0]?.url
+        const img = artist.images.at(-1)?.url ?? artist.images[0]?.url
         // Zigzag: los pares bajan, los impares suben (o al revés).
         const offset = i % 2 === 0 ? "translate-y-4" : "-translate-y-4"
         return (
@@ -33,6 +33,7 @@ export function ArtistStagger({ artists, onSelect }: ArtistStaggerProps) {
                 src={img}
                 alt=""
                 loading="lazy"
+                crossOrigin="anonymous"
                 className="h-16 w-16 rounded-full object-cover shadow-md transition-transform group-hover:scale-110 group-focus-visible:ring-2 group-focus-visible:ring-ring"
               />
             ) : (

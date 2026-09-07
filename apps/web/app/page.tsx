@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "../lib/auth-context"
 import {
   useMe,
@@ -15,12 +14,13 @@ import { TrackCard } from "../components/track/TrackCard"
 import { ArtistCard } from "../components/artist/ArtistCard"
 import { Carousel } from "../components/ui/Carousel"
 import { CreatePlaylistButton } from "../components/playlist/CreatePlaylistButton"
+import { useOpenArtist } from "../lib/hooks/use-open-artist"
 import type { SpotifyTrack } from "@spotify-clone/shared"
 
 export default function Home() {
   const { accessToken, isLoading } = useAuth()
-  const router = useRouter()
   const playTrack = usePlayTrack()
+  const openArtist = useOpenArtist()
 
   const { data: me } = useMe()
   const { data: recent } = useRecentlyPlayed(15)
@@ -90,7 +90,7 @@ export default function Home() {
               <ArtistCard
                 key={artist.id}
                 artist={artist}
-                onClick={() => router.push(`/artist/${artist.id}`)}
+                onClick={() => openArtist(artist)}
               />
             ))}
           </Carousel>

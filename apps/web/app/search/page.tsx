@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useSearchTracks, useTopArtists } from "../../lib/hooks/spotify"
 import { TrackListSkeleton } from "../../components/track/TrackRowSkeleton"
@@ -10,6 +9,7 @@ import { ArtistStagger } from "../../components/artist/ArtistStagger"
 import { Button } from "../../components/ui/Button"
 import { cn } from "../../lib/cn"
 import { usePlayTrack } from "../../lib/hooks/use-play-track"
+import { useOpenArtist } from "../../lib/hooks/use-open-artist"
 import { getGreeting } from "../../lib/greeting"
 
 /**
@@ -23,7 +23,7 @@ export default function SearchPage() {
   const [input, setInput] = useState("")
   const [debounced, setDebounced] = useState("")
   const playTrack = usePlayTrack()
-  const router = useRouter()
+  const openArtist = useOpenArtist()
   const { data: topArtists } = useTopArtists(12)
   const scrollRef = useRef<HTMLElement | null>(null)
 
@@ -109,7 +109,7 @@ export default function SearchPage() {
         <div className="mt-10">
           <ArtistStagger
             artists={topArtists}
-            onSelect={(artist) => router.push(`/artist/${artist.id}`)}
+            onSelect={(artist) => openArtist(artist)}
           />
         </div>
       )}

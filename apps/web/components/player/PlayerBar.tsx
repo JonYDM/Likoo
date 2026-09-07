@@ -38,6 +38,7 @@ export function PlayerBar() {
     seek,
     isExpanded,
     toggleExpanded,
+    hideTrackInfo,
   } = usePlayerStore()
 
   // Progreso animado. Todo el cálculo temporal ocurre DENTRO del effect (no en
@@ -68,9 +69,11 @@ export function PlayerBar() {
 
   // Color dominante de la carátula (para el efecto de fondo del lienzo).
   // Se llama antes de cualquier return condicional (reglas de hooks).
-  const albumColor = useAlbumColor(currentTrack?.albumArt)
+  // Durante el Reto no usamos la carátula real (no filtrar el color de la rola).
+  const artForColor = hideTrackInfo ? undefined : currentTrack?.albumArt
+  const albumColor = useAlbumColor(artForColor)
   // Paleta (3 colores) para las "luces" flotantes del lienzo.
-  const palette = useAlbumPalette(currentTrack?.albumArt, 3)
+  const palette = useAlbumPalette(artForColor, 3)
 
   // Publicamos el color como variable CSS global (--album-color) en :root. Así
   // cualquier componente (player, perfil...) lo usa vía var(--album-color) en
@@ -142,7 +145,12 @@ export function PlayerBar() {
     </div>
   )
 
-  const cover = currentTrack?.albumArt
+  // En modo Reto (hideTrackInfo) NO se revela la canción: se oculta carátula y
+  // se sustituyen nombre/artista por un texto genérico. Así el host no ve la
+  // respuesta en su reproductor.
+  const cover = hideTrackInfo ? undefined : currentTrack?.albumArt
+  const displayName = hideTrackInfo ? "🎵 Reto en curso" : currentTrack?.name
+  const displayArtist = hideTrackInfo ? "Adivina la canción" : currentTrack?.artists
 
   return (
     <>
@@ -203,10 +211,10 @@ export function PlayerBar() {
               )}
               <div className="min-w-0 text-center">
                 <div className="truncate font-semibold text-foreground">
-                  {currentTrack.name}
+                  {displayName}
                 </div>
                 <div className="truncate text-sm text-muted">
-                  {currentTrack.artists}
+                  {displayArtist}
                 </div>
               </div>
               <div className="space-y-1">
@@ -262,10 +270,10 @@ export function PlayerBar() {
             )}
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium text-foreground">
-                {currentTrack.name}
+                {displayName}
               </div>
               <div className="truncate text-xs text-muted">
-                {currentTrack.artists}
+                {displayArtist}
               </div>
             </div>
             {controls}

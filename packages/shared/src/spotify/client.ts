@@ -42,6 +42,8 @@ export class SpotifyApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    /** Segundos a esperar antes de reintentar (header Retry-After en un 429). */
+    public retryAfter?: number,
   ) {
     super(message)
     this.name = "SpotifyApiError"
@@ -190,7 +192,17 @@ async function spotifyFetch<T>(
       } catch {
         // cuerpo no-JSON: nos quedamos con el mensaje por defecto
       }
-      throw new SpotifyApiError(res.status, message)
+      // En un 429, Spotify indica en Retry-After cuántos SEGUNDOS esperar.
+      let retryAfter: number | undefined
+      if (res.status === 429) {
+        const header = res.headers.get("retry-after")
+        const parsed = header != null ? Number(header) : NaN
+        if (!Number.isNaN(parsed)) retryAfter = parsed
+        message = `[429] Rate limited by Spotify. Retry-After: ${
+          retryAfter != null ? `${retryAfter}s` : "desconocido"
+        }`
+      }
+      throw new SpotifyApiError(res.status, message, retryAfter)
     }
 
     // Algunas respuestas (204 No Content, p.ej. control de reproducción) no
@@ -329,6 +341,52 @@ export async function getArtistAlbums(
     `/artists/${encodeURIComponent(artistId)}/albums?${pageParams(opts).toString()}`,
   )
   return mapPage(res, mapAlbum)
+}
+
+/** Detalle de un álbum. GET /albums/{id} */
+export async function getAlbum(
+  accessToken: string,
+  albumId: string,
+): Promise<SpotifyAlbum> {
+  const res = await spotifyFetch<RawAlbumFull>(
+    accessToken,
+    `/albums/${encodeURIComponent(albumId)}`,
+  )
+  return mapAlbum(res)
+}
+
+/**
+ * Tracks de un álbum. GET /albums/{id}/tracks
+ * OJO: estos tracks vienen "simplificados", SIN el objeto `album` anidado. Como
+ * la UI (mapTrack) necesita album para la carátula, inyectamos los datos del
+ * álbum padre (que pasamos como argumento) en cada track antes de mapear.
+ */
+export async function getAlbumTracks(
+  accessToken: string,
+  albumId: string,
+  album: SpotifyAlbum,
+  opts: PageOptions = {},
+): Promise<Paginated<SpotifyTrack>> {
+  const res = await spotifyFetch<
+    RawPaginated<Omit<RawTrack, "album">>
+  >(
+    accessToken,
+    `/albums/${encodeURIComponent(albumId)}/tracks?${pageParams(opts).toString()}`,
+  )
+
+  // Inyectamos el álbum padre (crudo) en cada track para poder mapear.
+  const rawAlbum: RawAlbum = {
+    id: album.id,
+    name: album.name,
+    images: album.images.map((img) => ({
+      url: img.url,
+      width: img.width,
+      height: img.height,
+    })),
+  }
+  const withAlbum: RawTrack[] = res.items.map((t) => ({ ...t, album: rawAlbum }))
+
+  return mapPage({ ...res, items: withAlbum }, mapTrack)
 }
 
 /**

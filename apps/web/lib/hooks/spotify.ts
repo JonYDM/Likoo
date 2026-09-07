@@ -8,6 +8,8 @@ import {
 import {
   getArtist,
   getArtistAlbums,
+  getAlbum,
+  getAlbumTracks,
   getMe,
   getMyPlaylists,
   getPlaylist,
@@ -18,6 +20,7 @@ import {
   getTopTracks,
   searchTracks,
   type Paginated,
+  type SpotifyAlbum,
   type SpotifyArtist,
   type SpotifyPlaylist,
   type SpotifyTrack,
@@ -59,6 +62,9 @@ export const spotifyKeys = {
   artist: (id: string) => [...spotifyKeys.all, "artist", id] as const,
   artistAlbums: (id: string) =>
     [...spotifyKeys.all, "artist", id, "albums"] as const,
+  album: (id: string) => [...spotifyKeys.all, "album", id] as const,
+  albumTracks: (id: string) =>
+    [...spotifyKeys.all, "album", id, "tracks"] as const,
 }
 
 /** Calcula el offset de la siguiente página, o undefined si ya no hay más. */
@@ -219,4 +225,35 @@ export function useArtistAlbums(artistId: string) {
     (token, opts) => getArtistAlbums(token, artistId, opts),
     { enabled: !!artistId },
   )
+}
+
+
+/** Detalle de un álbum. */
+export function useAlbum(albumId: string) {
+  const { accessToken } = useAuth()
+
+  return useQuery<SpotifyAlbum, Error>({
+    queryKey: spotifyKeys.album(albumId),
+    enabled: !!accessToken && !!albumId,
+    queryFn: () => getAlbum(accessToken!, albumId),
+  })
+}
+
+/**
+ * Tracks de un álbum. Necesita el objeto `album` (para inyectar carátula en los
+ * tracks simplificados), así que se habilita cuando el álbum ya está cargado.
+ */
+export function useAlbumTracks(albumId: string, album: SpotifyAlbum | undefined) {
+  const { accessToken } = useAuth()
+
+  return useQuery<SpotifyTrack[], Error>({
+    queryKey: spotifyKeys.albumTracks(albumId),
+    enabled: !!accessToken && !!albumId && !!album,
+    queryFn: async () => {
+      const page = await getAlbumTracks(accessToken!, albumId, album!, {
+        limit: 50,
+      })
+      return page.items
+    },
+  })
 }

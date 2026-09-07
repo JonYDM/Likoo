@@ -34,6 +34,11 @@ interface PlayerState {
     // UI: reproductor expandido/comprimido (útil en móvil).
     isExpanded: boolean
     toggleExpanded: () => void
+
+    // UI: oculta título/carátula del reproductor (para el Reto: no spoilear la
+    // canción que hay que adivinar). Lo activa/desactiva la página /challenge.
+    hideTrackInfo: boolean
+    setHideTrackInfo: (v: boolean) => void
 }
 
  export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -67,4 +72,6 @@ interface PlayerState {
       get().player?.seek(ms)
     },
     toggleExpanded: () => set((s) => ({ isExpanded: !s.isExpanded })),
+    hideTrackInfo: false,
+    setHideTrackInfo: (hideTrackInfo) => set({ hideTrackInfo }),
   }))

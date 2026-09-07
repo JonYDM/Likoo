@@ -20,10 +20,14 @@ export function makeQueryClient(): QueryClient {
         gcTime: 10 * 60 * 1000, // 10 min
         refetchOnWindowFocus: false,
         retry: (failureCount, error) => {
-          // No reintentar errores de auth: requieren reautenticación, no retry.
+          // No reintentar errores que un retry NO resuelve y que además pueden
+          // empeorar la situación:
+          //  - 401/403: sesión expirada o permiso denegado → reautenticar.
+          //  - 429 Too Many Requests: reintentar AGRAVA el rate limit (le dice
+          //    a Spotify que seguimos martillando y prolonga el bloqueo).
           if (error instanceof Error && "status" in error) {
             const status = (error as { status?: number }).status
-            if (status === 401 || status === 403) return false
+            if (status === 401 || status === 403 || status === 429) return false
           }
           return failureCount < 1
         },
